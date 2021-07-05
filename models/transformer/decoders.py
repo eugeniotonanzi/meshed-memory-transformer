@@ -70,7 +70,7 @@ class MeshedDecoder(Module):
         self.padding_idx = padding_idx
         self.N = N_dec
 
-        self.register_state('running_mask_self_attention', torch.zeros((1, 1, 0)).byte())
+        self.register_state('running_mask_self_attention', torch.zeros((1, 1, 0)).bool())
         self.register_state('running_seq', torch.zeros((1,)).long())
 
     def forward(self, input, encoder_output, mask_encoder):
@@ -80,7 +80,7 @@ class MeshedDecoder(Module):
         mask_self_attention = torch.triu(torch.ones((seq_len, seq_len), dtype=torch.uint8, device=input.device),
                                          diagonal=1)
         mask_self_attention = mask_self_attention.unsqueeze(0).unsqueeze(0)  # (1, 1, seq_len, seq_len)
-        mask_self_attention = mask_self_attention + (input == self.padding_idx).unsqueeze(1).unsqueeze(1).byte()
+        mask_self_attention = mask_self_attention + (input == self.padding_idx).unsqueeze(1).unsqueeze(1).bool()
         mask_self_attention = mask_self_attention.gt(0)  # (b_s, 1, seq_len, seq_len)
         if self._is_stateful:
             self.running_mask_self_attention = torch.cat([self.running_mask_self_attention, mask_self_attention], -1)
